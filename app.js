@@ -39,6 +39,25 @@ function toast(msg) {
   setTimeout(() => el.remove(), 3400);
 }
 
+// Special persistent toast for countdown timers (returns update handle)
+function countdownToast(getMsg) {
+  const wrap = document.getElementById("toast-wrap");
+  const el = document.createElement("div");
+  el.className = "toast"; 
+  el.style.borderLeft = "4px solid #ef4444";
+  el.textContent = getMsg();
+  wrap.appendChild(el);
+  
+  const timer = setInterval(() => {
+    el.textContent = getMsg();
+  }, 1000);
+
+  setTimeout(() => {
+    clearInterval(timer);
+    el.remove();
+  }, 30000); // Display for 30 seconds
+}
+
 function openModal(id) { 
   document.getElementById(id).classList.add("show"); 
 }
@@ -268,7 +287,7 @@ function checkProximityAlerts() {
         inDanger = true;
         break; 
       } else if (r.type === "safe") {
-        const totalWeight = (r.confirmations || []).reduce((acc, uid) => acc + (uid === "GUARDIAN_WEIGHT_BOOST" ? 1 : 1), 0);
+        const totalWeight = (r.confirmations || []).length;
         if (totalWeight >= 3) inSafe = true;
       }
     }
@@ -291,13 +310,13 @@ function setProximityBanner(status) {
 
   if (status === "danger" && banner.className.indexOf("hidden") !== -1) {
     banner.className = "proximity-banner state-danger";
-    icon.textContent = "⚠️";
+    icon.textContent = "";
     text.textContent = "Red Alert: Danger Zone Nearby!"; 
     if ("Notification" in window && Notification.permission === "granted") { new Notification("Safe Heaven", { body: text.textContent }); }
   } else if (status === "safe" && banner.className.indexOf("hidden") !== -1) {
     banner.className = "proximity-banner state-safe";
     icon.textContent = "";
-    text.textContent = "You are in a verified safe zone"; 
+    text.textContent = "You are in a verified safe zone."; 
     if ("Notification" in window && Notification.permission === "granted") { new Notification("Safe Heaven", { body: text.textContent }); }
   } else if (!status) {
     banner.className = "proximity-banner hidden";
@@ -333,8 +352,14 @@ function promptReport(type) {
   
   const now = Date.now();
   if (state.user && state.user.bannedUntil && state.user.bannedUntil > now) {
-    const remainingMins = Math.ceil((state.user.bannedUntil - now) / 60000);
-    return toast(`Anti-Spam: You are temporarily blocked from marking zones for another ${remainingMins} minutes.`);
+    countdownToast(() => {
+      const diff = state.user.bannedUntil - Date.now();
+      if (diff <= 0) return "Ban expired. You can now mark zones.";
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      return `Spam Ban Active! Time remaining: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    });
+    return;
   }
 
   state.pendingType = type;
@@ -372,14 +397,22 @@ document.getElementById("report-confirm-btn").addEventListener("click", async ()
       } catch (err) { console.error("Spam penalty error:", err); }
 
       closeModal("report-modal-overlay");
-      return toast("Anti-Spam Triggered: You submitted >3 zones in 30 mins. Trust score penalized by 10 points and posting restricted for 30 minutes");
+      
+      // Trigger live countdown notification banner for the ban
+      countdownToast(() => {
+        const diff = state.user.bannedUntil - Date.now();
+        if (diff <= 0) return "Ban expired.";
+        const mins = Math.floor(diff / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        return `Spam Triggered (-10 Trust)! Banned for: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      });
+      return;
     }
   }
 
   const isGuardian = state.user.trust >= 75;
   const initialConfs = type === "safe" ? [state.user.uid] : [];
   
-  // If Guardian marks the safe zone, give 2 votes right away (displayed as 2 of 3)
   if (type === "safe" && isGuardian) {
     initialConfs.push("GUARDIAN_WEIGHT_BOOST"); 
   }
@@ -398,7 +431,6 @@ document.getElementById("report-confirm-btn").addEventListener("click", async ()
 
   try {
     await db.collection("reports").add(report);
-    const displayConfs = initialConfs.length;
     toast(type === "danger" ? "Danger reported immediately" : (isGuardian ? "Safe zone submitted by Guardian (2 of 3 confirmed)!" : "Safe zone submitted (1 of 3 confirmed)"));
     state.pendingLatLng = null;
     document.getElementById("pin-hint").innerHTML = "<span>Tap anywhere on the map to select a location</span>";
@@ -422,16 +454,13 @@ async function confirmSafeZone(reportId) {
       
       const newConfs = [...confs, state.user.uid];
       
-      // If confirming user is a Guardian, add an extra vote weight (total 2 votes added for this user)
       if (state.user.trust >= 75) {
         newConfs.push("GUARDIAN_WEIGHT_BOOST");
       }
 
-      // Calculate total weight (each entry counts as 1 vote)
       const totalWeight = newConfs.length;
       const updatePayload = { confirmations: newConfs };
       
-      // Verified once total confirmation weight reaches 3 or more
       if (totalWeight >= 3) {
          updatePayload.expiresAt = Date.now() + 30 * 60000;
          updateUserTrustScore(data.reportedBy, 5); 
