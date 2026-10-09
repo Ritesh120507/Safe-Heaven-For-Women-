@@ -207,7 +207,7 @@ function setupGPS() {
           iconAnchor: [11, 11]
         });
         userMarker = L.marker(userLatLng, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-        userMarker.bindTooltip("You are here", { direction: "top", offset: [0, -10] });
+        userMarker.bindTooltip(" are here", { direction: "top", offset: [0, -10] });
         
         userRadiusCircle = L.circle(userLatLng, {
           radius: pos.coords.accuracy || 30,
@@ -302,8 +302,8 @@ function setProximityBanner(status) {
     if ("Notification" in window && Notification.permission === "granted") { new Notification("Safe Heaven", { body: text.textContent }); }
   } else if (status === "safe" && banner.className.indexOf("hidden") !== -1) {
     banner.className = "proximity-banner state-safe";
-    icon.textContent = "✅";
-    text.textContent = "You are in a verified safe zone."; 
+    icon.textContent = "";
+    text.textContent = "You are in a verified safe zone"; 
     if ("Notification" in window && Notification.permission === "granted") { new Notification("Safe Heaven", { body: text.textContent }); }
   } else if (!status) {
     banner.className = "proximity-banner hidden";
@@ -344,7 +344,7 @@ function promptReport(type) {
   const now = Date.now();
   if (state.user && state.user.bannedUntil && state.user.bannedUntil > now) {
     const remainingMins = Math.ceil((state.user.bannedUntil - now) / 60000);
-    return toast(`🚫 Anti-Spam: You are temporarily blocked from marking zones for another ${remainingMins} minutes.`);
+    return toast(`Anti-Spam: You are temporarily blocked from marking zones for another ${remainingMins} minutes.`);
   }
 
   state.pendingType = type;
@@ -384,7 +384,7 @@ document.getElementById("report-confirm-btn").addEventListener("click", async ()
       } catch (err) { console.error("Spam penalty error:", err); }
 
       closeModal("report-modal-overlay");
-      return toast("⚠️ Anti-Spam Triggered: You submitted >3 zones in 30 mins. Trust score penalized by 10 points and posting restricted for 30 minutes.");
+      return toast("Anti-Spam Triggered: You submitted >3 zones in 30 mins. Trust score penalized by 10 points and posting restricted for 30 minutes");
     }
   }
 
