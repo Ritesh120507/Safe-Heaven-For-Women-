@@ -297,7 +297,7 @@ function setProximityBanner(status) {
 
   if (status === "danger" && banner.className.indexOf("hidden") !== -1) {
     banner.className = "proximity-banner state-danger";
-    icon.textContent = "⚠️";
+    icon.textContent = "";
     text.textContent = "Red Alert: Danger Zone Nearby!"; 
     if ("Notification" in window && Notification.permission === "granted") { new Notification("Safe Heaven", { body: text.textContent }); }
   } else if (status === "safe" && banner.className.indexOf("hidden") !== -1) {
@@ -344,7 +344,7 @@ function promptReport(type) {
   const now = Date.now();
   if (state.user && state.user.bannedUntil && state.user.bannedUntil > now) {
     const remainingMins = Math.ceil((state.user.bannedUntil - now) / 60000);
-    return toast(`Anti-Spam: You are temporarily blocked from marking zones for another ${remainingMins} minutes.`);
+    return toast(`Anti-Spam: You are temporarily blocked from marking zones for another ${remainingMins} minutes`);
   }
 
   state.pendingType = type;
@@ -553,7 +553,7 @@ function openZoneModal(id) {
     
   } else {
     if (confs.length >= 2) {
-      prog.textContent = "Fully Verified Safe Zone.";
+      prog.textContent = "Fully Verified Safe Zone";
       btn.style.display = "none";
       
       timerEl.style.display = "block";
