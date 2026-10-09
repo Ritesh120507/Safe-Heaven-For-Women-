@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+<title>Safe Heaven for Women</title>
+<meta name="theme-color" content="#0a1a12" />
+
+<link rel="icon" href="light green wings.png" type="image/jpeg">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="styles.css" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="bg-image"></div>
+
+<div id="proximity-banner" class="proximity-banner hidden">
+  <div class="proximity-banner-content">
+    <span class="proximity-icon" id="proximity-icon">⚠️</span>
+    <span class="proximity-text" id="proximity-text">Alert</span>
+  </div>
+</div>
+
+<header class="app-nav">
+  <div class="nav-container">
+    <a href="#hero" class="nav-brand">
+      <img src="light green wings.png" alt="Safe Heaven Icon" class="brand-icon-img" />
+      <div class="brand-titles">
+        <span class="brand-title">Safe Heaven For Women</span>
+      </div>
+    </a>
+    <div class="nav-links" id="nav-links">
+      <a href="#hero" class="nav-link">Home</a>
+      <a href="#how" class="nav-link">How It Works</a>
+      <a href="#mapsec" class="nav-link">Live Map</a>
+      <div id="nav-user-slot"></div>
+    </div>
+    <button class="nav-mobile-toggle" id="nav-mobile-toggle">☰</button>
+  </div>
+</header>
+
+<div id="scroll-spacer">
+
+  <section class="section" id="hero">
+    <div class="card">
+      <p class="eyebrow">Safe Ground · Verified Together</p>
+      <h1>Safe Heaven <br/>for Women</h1>
+      <p style="font-style:italic; color:var(--text-hi);">A community-verified safety network and live ground map with GPS protection.</p>
+
+      <div class="status-pill">
+        <span class="dot" id="fb-dot"></span>
+        <span id="fb-status">Connecting to Firebase…</span>
+      </div>
+
+      <div id="auth-profile-card" style="display:none; background:rgba(102, 255, 153, 0.1); border:1px solid rgba(102, 255, 153, 0.3); border-radius:1.25rem; padding:1rem; margin-bottom:1rem;">
+        <div style="display:flex; align-items:center; gap:0.85rem;">
+          <div id="user-avatar-container"></div>
+          <div style="flex:1;">
+            <div id="user-display-name" style="font-weight:700; font-size:1.1rem; color:var(--theme-glow); display: flex; align-items: center;">User</div>
+            <div id="user-email-phone" style="font-size:0.8rem; color:var(--text-hi);"></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <a href="#mapsec" class="btn btn-primary" style="flex:1;">Open Live Map ↓</a>
+          <button class="btn btn-ghost" id="hero-logout-btn">Sign out</button>
+        </div>
+      </div>
+
+      <div class="btn-row" id="auth-buttons">
+        <button class="btn btn-google" id="google-signin-btn" style="flex:1 1 200px;">
+          <svg width="18" height="18" viewBox="0 0 48 48" style="margin-right:8px;">
+            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+            <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.4 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.6 39.6 16.3 44 24 44z"/>
+            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2C40.8 36.3 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+          </svg>
+          Sign in with Google
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <div class="card">
+      <p class="eyebrow">Collective Trust Framework</p>
+      <h2>Built by us, verified together</h2>
+      <div class="features-grid">
+        <div class="feature-box">
+          <h4 class="feature-title">1. GPS Proximity Radar</h4>
+          <p class="feature-desc" style="color:var(--text-hi);">Your live location is protected in real-time. If you step near a danger zone, an immediate red "Alert" triggers. In safe zones, you'll see "You are safe".</p>
+        </div>
+        <div class="feature-box">
+          <h4 class="feature-title">2. 3-Peer Safe Confirmation</h4>
+          <p class="feature-desc" style="color:var(--text-hi);">A safe zone stays yellow until 3 verified women vouch for it. Only then does it turn green and activate its 30-minute safety window.</p>
+        </div>
+        <div class="feature-box">
+          <h4 class="feature-title">3. Instant Danger Broadcast</h4>
+          <p class="feature-desc" style="color:var(--text-hi);">Red danger pins notify nearby users instantly, initiating an immediate 30-minute community alert countdown.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="mapsec">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0;">Live Map</h2>
+        <button class="btn btn-ghost" id="recenter-gps-btn" style="padding:0.4rem 0.9rem; font-size:0.8rem; min-height:34px;">Locate Me</button>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="map-column">
+          <div id="map"></div>
+          <div class="map-helper-bar">
+            <div id="pin-hint"><span>Tap anywhere on the map to select a location</span></div>
+            <div id="gps-status-badge" style="font-size:0.75rem; color:var(--theme-glow); font-weight:600;">📡 Initializing GPS…</div>
+          </div>
+        </div>
+
+        <div class="activity-column">
+          <div class="action-card">
+            <h4 style="margin:0 0 0.75rem; color:var(--theme-glow); text-transform:uppercase;">Safety Controls</h4>
+            <div class="action-btn-row">
+              <button class="btn btn-safe" id="mark-safe-btn" disabled>Mark Safe</button>
+              <button class="btn btn-danger" id="report-danger-btn" disabled>Report Danger</button>
+            </div>
+          </div>
+
+          <div class="feed-card">
+            <div class="feed-header">
+              <span style="font-weight:800; color:var(--theme-glow); letter-spacing:1px;">LIVE REPORTS</span>
+              <span class="badge" id="reports-count">0 Active</span>
+            </div>
+            <div class="reports-list" id="reports-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast-wrap"></div>
+
+<div class="modal-overlay" id="report-modal-overlay">
+  <div class="modal">
+    <span class="close-x" data-close="report-modal-overlay">✕</span>
+    <h3 id="report-modal-title" style="color:var(--theme-glow); margin-top:0;">Confirm location</h3>
+    <button class="btn btn-primary" id="report-confirm-btn" style="width:100%; margin-top:1rem;">Submit to Map</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="zone-modal-overlay">
+  <div class="modal">
+    <span class="close-x" data-close="zone-modal-overlay">✕</span>
+    <h3 id="zone-modal-title" style="color:var(--theme-glow); margin-top:0; text-align: center;">Zone details</h3>
+    <div id="zone-modal-timer" style="font-family: monospace; font-size: 2.8rem; color: var(--theme-glow); text-align: center; margin-bottom: 1rem; font-weight: 700; display: none;">30:00</div>
+    <p id="zone-modal-progress" style="margin-bottom:1.5rem; color:var(--text-hi); font-weight:600; text-align: center;"></p>
+    <button class="btn btn-safe" id="zone-confirm-btn" style="width:100%;">Confirm this safe zone</button>
+  </div>
+</div>
+
+<script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script defer src="app.js"></script>
+</body>
+</html>
