@@ -88,7 +88,7 @@ function updateUserUI(user) {
     authBtns.style.display = "none";
     profileCard.style.display = "block";
     
-    let badgeHtml = state.user.trust >= 75 ? `<img src="medal-.png" class="trust-badge" title="Trust Guardian" alt="Guardian Badge">` : '';
+    let badgeHtml = state.user.trust >= 75 ? `<img src="medal.png" class="trust-badge" title="Trust Guardian" alt="Guardian Badge">` : '';
     
     document.getElementById("user-display-name").innerHTML = `${user.displayName || "User"} ${badgeHtml}`;
     document.getElementById("user-email-phone").textContent = user.email || "Verified User";
