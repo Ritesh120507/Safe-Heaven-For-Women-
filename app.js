@@ -69,8 +69,7 @@ function updateUserUI(user) {
     authBtns.style.display = "none";
     profileCard.style.display = "block";
     
-    // Inject the Golden Star Badge if Trust Score is 75 or higher
-    let badgeHtml = state.user.trust >= 75 ? `<img src="medal.png" class="trust-badge" title="Trust Guardian" alt="Guardian Badge">` : '';
+    let badgeHtml = state.user.trust >= 75 ? `<img src="medal-.png" class="trust-badge" title="Trust Guardian" alt="Guardian Badge">` : '';
     
     document.getElementById("user-display-name").innerHTML = `${user.displayName || "User"} ${badgeHtml}`;
     document.getElementById("user-email-phone").textContent = user.email || "Verified User";
@@ -102,7 +101,6 @@ function updateUserUI(user) {
   }
 }
 
-// Fetch user data & initialize trust score to 25
 async function syncUser(firebaseUser) {
   if (!fbReady) return;
   const ref = db.collection("users").doc(firebaseUser.uid);
@@ -132,7 +130,6 @@ async function syncUser(firebaseUser) {
   updateUserUI(state.user);
 }
 
-// Google Auth 
 document.getElementById("google-signin-btn").addEventListener("click", async () => {
   if (!fbReady) return toast("Firebase not ready");
   const provider = new firebase.auth.GoogleAuthProvider();
@@ -154,7 +151,6 @@ if (fbReady) {
   });
 }
 
-// Leaflet Map Init
 const map = L.map("map", { maxZoom: 22 }).setView([20.5937, 78.9629], 5);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { 
@@ -174,9 +170,6 @@ map.on("click", (e) => {
   if(state.user) document.getElementById("pin-hint").innerHTML = `<span>✓ Location selected successfully</span>`;
 });
 
-/* ============================================================
-   ██  GPS REAL-TIME LOCATION & PROXIMITY DETECTION
-   ============================================================ */
 let userMarker = null;
 let userRadiusCircle = null;
 let hasCenteredUser = false;
@@ -207,7 +200,7 @@ function setupGPS() {
           iconAnchor: [11, 11]
         });
         userMarker = L.marker(userLatLng, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-        userMarker.bindTooltip(" are here", { direction: "top", offset: [0, -10] });
+        userMarker.bindTooltip("You are here", { direction: "top", offset: [0, -10] });
         
         userRadiusCircle = L.circle(userLatLng, {
           radius: pos.coords.accuracy || 30,
@@ -274,8 +267,9 @@ function checkProximityAlerts() {
       if (r.type === "danger") {
         inDanger = true;
         break; 
-      } else if (r.type === "safe" && (r.confirmations || []).length >= 2) {
-        inSafe = true;
+      } else if (r.type === "safe") {
+        const totalWeight = (r.confirmations || []).reduce((acc, uid) => acc + (uid === "GUARDIAN_WEIGHT_BOOST" ? 1 : 1), 0);
+        if (totalWeight >= 3) inSafe = true;
       }
     }
   }
@@ -297,7 +291,7 @@ function setProximityBanner(status) {
 
   if (status === "danger" && banner.className.indexOf("hidden") !== -1) {
     banner.className = "proximity-banner state-danger";
-    icon.textContent = "";
+    icon.textContent = "⚠️";
     text.textContent = "Red Alert: Danger Zone Nearby!"; 
     if ("Notification" in window && Notification.permission === "granted") { new Notification("Safe Heaven", { body: text.textContent }); }
   } else if (status === "safe" && banner.className.indexOf("hidden") !== -1) {
@@ -312,9 +306,6 @@ function setProximityBanner(status) {
 
 setupGPS();
 
-/* ============================================================
-   ██  ANTI-SPAM & TRUST ECONOMY LOGIC
-   ============================================================ */
 async function updateUserTrustScore(userId, pointChange) {
   if (!userId) return;
   const userRef = db.collection('users').doc(userId);
@@ -340,15 +331,14 @@ document.getElementById("report-danger-btn").addEventListener("click", () => pro
 function promptReport(type) {
   if (!state.pendingLatLng) return toast("Tap on the map first to pick a location");
   
-  // Check if user is currently banned for spamming
   const now = Date.now();
   if (state.user && state.user.bannedUntil && state.user.bannedUntil > now) {
     const remainingMins = Math.ceil((state.user.bannedUntil - now) / 60000);
-    return toast(`Anti-Spam: You are temporarily blocked from marking zones for another ${remainingMins} minutes`);
+    return toast(`Anti-Spam: You are temporarily blocked from marking zones for another ${remainingMins} minutes.`);
   }
 
   state.pendingType = type;
-  document.getElementById("report-modal-title").textContent = type === "danger" ? "Report Danger Zone" : "Mark Safe Zone (2 Confirmations)";
+  document.getElementById("report-modal-title").textContent = type === "danger" ? "Report Danger Zone" : "Mark Safe Zone (3 Confirmations Needed)";
   openModal("report-modal-overlay");
 }
 
@@ -357,7 +347,6 @@ document.getElementById("report-confirm-btn").addEventListener("click", async ()
   const type = state.pendingType;
   const now = Date.now();
 
-  // ANTI-SPAM CHECK: If marking safe, verify they haven't posted >3 in the last 30 minutes
   if (type === "safe") {
     const thirtyMinsAgo = now - (30 * 60000);
     const recentSafeReports = state.reports.filter(r => 
@@ -368,7 +357,6 @@ document.getElementById("report-confirm-btn").addEventListener("click", async ()
     );
 
     if (recentSafeReports.length >= 3) {
-      // Flag user, penalize 10 points, and ban for 30 minutes
       const banUntil = now + (30 * 60000);
       const userRef = db.collection("users").doc(state.user.uid);
       
@@ -390,6 +378,8 @@ document.getElementById("report-confirm-btn").addEventListener("click", async ()
 
   const isGuardian = state.user.trust >= 75;
   const initialConfs = type === "safe" ? [state.user.uid] : [];
+  
+  // If Guardian marks the safe zone, give 2 votes right away (displayed as 2 of 3)
   if (type === "safe" && isGuardian) {
     initialConfs.push("GUARDIAN_WEIGHT_BOOST"); 
   }
@@ -408,7 +398,8 @@ document.getElementById("report-confirm-btn").addEventListener("click", async ()
 
   try {
     await db.collection("reports").add(report);
-    toast(type === "danger" ? "Danger reported immediately" : (isGuardian ? "Safe zone instantly verified by Guardian!" : "Safe zone submitted (1 of 2 confirmed)"));
+    const displayConfs = initialConfs.length;
+    toast(type === "danger" ? "Danger reported immediately" : (isGuardian ? "Safe zone submitted by Guardian (2 of 3 confirmed)!" : "Safe zone submitted (1 of 3 confirmed)"));
     state.pendingLatLng = null;
     document.getElementById("pin-hint").innerHTML = "<span>Tap anywhere on the map to select a location</span>";
     closeModal("report-modal-overlay");
@@ -431,13 +422,17 @@ async function confirmSafeZone(reportId) {
       
       const newConfs = [...confs, state.user.uid];
       
+      // If confirming user is a Guardian, add an extra vote weight (total 2 votes added for this user)
       if (state.user.trust >= 75) {
         newConfs.push("GUARDIAN_WEIGHT_BOOST");
       }
 
+      // Calculate total weight (each entry counts as 1 vote)
+      const totalWeight = newConfs.length;
       const updatePayload = { confirmations: newConfs };
       
-      if (newConfs.length >= 2) {
+      // Verified once total confirmation weight reaches 3 or more
+      if (totalWeight >= 3) {
          updatePayload.expiresAt = Date.now() + 30 * 60000;
          updateUserTrustScore(data.reportedBy, 5); 
       }
@@ -451,11 +446,11 @@ async function confirmSafeZone(reportId) {
   }
 }
 
-function makeIcon(type, confirmCount) {
+function makeIcon(type, totalWeight) {
   let fill, ring, shadow;
   if (type === "danger") { 
     fill = "rgba(255, 77, 77, 0.9)"; ring = "#ff3333"; shadow = "0 0 15px rgba(255, 77, 77, 0.8)";
-  } else if (confirmCount >= 2) { 
+  } else if (totalWeight >= 3) { 
     fill = "rgba(77, 255, 136, 0.9)"; ring = "#33ff77"; shadow = "0 0 15px rgba(77, 255, 136, 0.8)";
   } else { 
     fill = "rgba(255, 214, 51, 0.9)"; ring = "#ffcc00"; shadow = "0 0 15px rgba(255, 204, 0, 0.8)"; 
@@ -486,10 +481,11 @@ function renderReports() {
 
   activeReports.forEach(r => {
     const confs = r.confirmations || [];
-    let status = r.type === "danger" ? "Danger" : (confs.length >= 2 ? "Verified Safe" : `${confs.length} of 2 Confirmed`);
-    let cls = r.type === "danger" ? "danger" : (confs.length >= 2 ? "safe" : "pending");
+    const totalWeight = confs.length;
+    let status = r.type === "danger" ? "Danger" : (totalWeight >= 3 ? "Verified Safe" : `${totalWeight} of 3 Confirmed`);
+    let cls = r.type === "danger" ? "danger" : (totalWeight >= 3 ? "safe" : "pending");
 
-    const marker = L.marker([r.lat, r.lng], { icon: makeIcon(r.type, confs.length) }).addTo(markerLayer);
+    const marker = L.marker([r.lat, r.lng], { icon: makeIcon(r.type, totalWeight) }).addTo(markerLayer);
     marker.on("click", () => openZoneModal(r.id));
 
     const item = document.createElement("div");
@@ -506,6 +502,7 @@ function openZoneModal(id) {
   const r = state.reports.find(x => x.id === id);
   if(!r) return;
   const confs = r.confirmations || [];
+  const totalWeight = confs.length;
   
   document.getElementById("zone-modal-title").textContent = r.type === "danger" ? "Danger Zone" : "Safe Zone";
   const btn = document.getElementById("zone-confirm-btn");
@@ -552,7 +549,7 @@ function openZoneModal(id) {
     window.zoneTimer = setInterval(updateTimerDisplay, 1000);
     
   } else {
-    if (confs.length >= 2) {
+    if (totalWeight >= 3) {
       prog.textContent = "Fully Verified Safe Zone";
       btn.style.display = "none";
       
@@ -561,7 +558,7 @@ function openZoneModal(id) {
       window.zoneTimer = setInterval(updateTimerDisplay, 1000);
       
     } else {
-      prog.textContent = `2 confirmations are required. Currently ${confs.length} of 2 are confirmed.`;
+      prog.textContent = `3 confirmations are required. Currently ${totalWeight} of 3 are confirmed.`;
       btn.style.display = "block";
       
       if (!state.user) { 
@@ -578,9 +575,6 @@ function openZoneModal(id) {
   openModal("zone-modal-overlay");
 }
 
-/* ============================================================
-   ██  AUTO-EXPIRY CLEANUP (FIREBASE)
-   ============================================================ */
 async function cleanupExpiredZones() {
   const now = Date.now();
   const expiredQuery = db.collection('reports').where('expiresAt', '<', now);
